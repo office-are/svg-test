@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>New Web Project</title>
+		<script type="text/javascript">
+			var v_height = 300;		// 仮想画面の高さ
+			var v_width  = 200;		// 仮想画面の幅
+			var v_aspect  = v_height / v_width; 
+			var is_webkit = false;
+			var x_pos = [ 60, 140,  40, 100, 160];
+			var y_pos = [ 50,  50, 150, 150, 150];
+			if (navigator.userAgent.match(/AppleWebKit/)) {
+				is_webkit = true;
+			}
+			var h = 100;
+			var w = 250;
+			var diff = 5;
+			var h_d = diff;
+			var w_d = diff;
+			var time = 16;
+			var z = 180;
+			var base_x_ofs = 0;
+			var base_y_ofs = 0;
+			var test_f = 0;
+			var mask_ele = [];
+			
+			var m_r = 28;	// マスクの円の半径
+			var mask_disk = {
+				
+			};
+
+			function test(){
+				for (i = 0; i < 5; i++) {
+					m_e = document.getElementById('m' + i);
+					m_e.setAttribute('r', m_r +'px');
+					m_e.setAttribute('cy', y_pos[i] +'px');
+					m_e.setAttribute('cx', x_pos[i] +'px');
+					mask_ele[i] = m_e;
+					
+				}
+				ele = document.getElementById("svg1");
+				e_b1 = document.getElementById("b1");
+				resize();
+				alert('test');
+				window.setTimeout('move()', time);
+			}
+			function move() {
+				if (test_f != 0) {
+					move_test();
+				}
+//				alert(h + 'px');
+				
+				if (h >= v_height) {
+					h_d = -diff;
+				} else if (h <= 10) {
+					h_d = diff;
+				}
+				h += h_d;
+
+				if (w >= v_width) {
+					w_d = -diff;
+				} else if (w <= 10) {
+					w_d = diff;
+				}
+				w += w_d;
+				e_b1.setAttribute('cy', h +'px');
+				e_b1.setAttribute('cx', w +'px');
+				window.setTimeout('move()', time);
+			}
+			/*
+			 * ブラウザの表示領域変更にあわせて svg の表示領域を変更する
+			 */
+			function resize() {
+				var b_width = window.innerWidth;
+				var b_height = window.innerHeight;
+				ele.setAttribute('height',b_height + 'px');
+				ele.setAttribute('width',b_width + 'px');
+				if (is_webkit) {
+					if ((b_width * v_aspect) > b_height) {
+						base_x_ofs = -((b_width * v_aspect) - b_height) / 2;
+						base_y_ofs = 0;
+					}
+					else if ((b_width * v_aspect) < b_height) {
+						base_x_ofs = 0;
+						base_y_ofs = -(b_height - (b_width * v_aspect));
+					} else {
+						base_x_ofs = 0;
+						base_y_ofs = 0;
+					}
+					var x_ofs = 0 + base_x_ofs;
+					var y_ofs = 0 + base_y_ofs;
+					ele.style.left = x_ofs + 'px';
+					ele.style.top = y_ofs + 'px';
+					ele.style.position = 'fixed';
+				} else {
+					// Firefox / Opera 向け補正
+					if ((b_width * v_aspect) < b_height) {
+						base_y_ofs = -(b_height - (b_width * v_aspect)) / 2;
+					} else {
+						base_y_ofs = 0;
+					}
+					var y_ofs = 0 + base_y_ofs;
+					ele.style.top = y_ofs + 'px';
+					ele.style.position = 'fixed';
+				}
+			}
+			function move_test() {
+				test_cnt += 1;
+				var r = make_ofs(x_pos[0], y_pos[0], x_pos[4], y_pos[4], test_cnt, 30);
+				mask_ele[0].setAttribute('cy', r[1] +'px');
+				mask_ele[0].setAttribute('cx', r[0] +'px');
+				
+				if (test_cnt == 30) {
+					test_f = 0;
+				}
+			}
+			function start_move_test() {
+				test_f = 1;
+				test_cnt = 0;
+			}
+			/*
+			 * s_* から e_* までを step で分割したときの count 番目の値を返す
+			 */
+			function make_ofs(s_x, s_y, e_x, e_y, count, step) {
+				var foo = count / step;
+				var x = s_x + (e_x - s_x) * foo;
+				var y = s_y + (e_y - s_y) * foo;
+				return [x, y];
+			}
+		</script>
+    </head>
+    <body onLoad="test()"  onresize="resize()">
+        <h1>New Web Project Page</h1>
+		<svg 
+			id="svg1" 
+			viewBox="0 0 200 300" 
+			style="position:fixed; top:0px; left:0px;margin:0;border:0;">
+               <defs>
+                 <radialGradient id="radial" cx="50%" cy="50%" fx="25%" fy="25%">
+                   <stop offset="0%" stop-color="#60bafc"></stop>
+                   <stop offset="50%" stop-color="#409adc"></stop>
+
+                   <stop offset="100%" stop-color="#005a9c"></stop>
+                 </radialGradient>
+                 <radialGradient id="radial2" cx="50%" cy="50%" fx="25%" fy="25%">
+                   <stop offset="0%" stop-color="#ba60fc"></stop>
+                   <stop offset="50%" stop-color="#9a40dc"></stop>
+                   <stop offset="100%" stop-color="#5a009c"></stop>
+                 </radialGradient>
+               </defs>
+			<rect opacity="0.2" style="fill:red;" x="0" y="0" width="200" height="300" />
+			<rect opacity="0.4" style="fill:skyblue;" x="2" y="2" width="196" height="296" />
+			<circle id="b1" cx="50" cy="50" r="10" fill="url(#radial)" stroke="#005a9c"></circle>
+			<circle id="m0" fill="url(#radial2)" stroke="#5a009c" onclick="start_move_test();"></circle>
+			<circle id="m1" fill="url(#radial2)" stroke="#5a009c"></circle>
+			<circle id="m2" fill="url(#radial2)" stroke="#5a009c"></circle>
+			<circle id="m3" fill="url(#radial2)" stroke="#5a009c"></circle>
+			<circle id="m4" fill="url(#radial2)" stroke="#5a009c"></circle>
+		</svg>
+<!--
+		<svg 
+			id="b1" 
+			width="540" 
+			height="200" 
+			viewBox="0 0 300 300" 
+			style="position:fixed; top:0px; left:0px;margin:0;border:0;">
+		</svg>
+-->
+    </body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>New Web Project</title>
+		<script type="text/javascript">
+			/*
+			 * 0-(n-1) の乱数を返す
+			 */
+			var rand = function(n) {
+				return Math.floor(Math.random()*n);
+			}
+			/*
+			 * ゲームの状態
+			 *   0:最初(説明メッセージの表示)
+			 *   1:ゲーム中
+			 *   2:ゲーム終了
+			 */
+			var state = 0;
+			/*
+			 * 移動先のテーブル
+			 */
+			var pattern = [	[1, 0, 3, 2, 4],
+							[1, 0, 2, 4, 3],
+							[2, 1, 0, 4, 3],
+							[2, 3, 0, 1, 4],
+							[2, 4, 0, 3, 1],
+							[3, 4, 2, 0, 1]
+							];
+			/*
+			 * 盤の  No の場所にある円盤の番号
+			 */
+			var board_tbl = [0, 1, 2, 3, 4];
+			var move_count = 0;		// 盤を移動させる残り回数
+			var v_height = 300;		// 仮想画面の高さ
+			var v_width  = 200;		// 仮想画面の幅
+			var v_aspect  = v_height / v_width; 
+			var is_webkit = false;
+			var x_pos = [ 60, 140,  40, 100, 160];
+			var y_pos = [ 50,  50, 150, 150, 150];
+			if (navigator.userAgent.match(/AppleWebKit/)) {
+				is_webkit = true;
+			}
+			var h = 100;
+			var w = 250;
+			var diff = 5;
+			var h_d = diff;
+			var w_d = diff;
+			var time = 16;
+			var z = 180;
+			var base_x_ofs = 0;
+			var base_y_ofs = 0;
+			var test_f = 0;
+			var mask_ele = [];
+			var moving_step = 30;	// 円盤の移動完了まで何段回か
+			var r_step = Math.PI / moving_step; 
+
+
+			
+			var m_r = 28;	// マスクの円の半径
+			var mask_disk = {
+				
+			};
+
+			function test(){
+				for (i = 0; i < 5; i++) {
+					m_e = document.getElementById('m' + i);
+					m_e.setAttribute('r', m_r +'px');
+					m_e.setAttribute('cy', y_pos[i] +'px');
+					m_e.setAttribute('cx', x_pos[i] +'px');
+					m_e.current_pos = i;
+					m_e.new_pos = i;
+					mask_ele[i] = m_e;
+					
+				}
+				ele = document.getElementById("svg1");
+				e_b1 = document.getElementById("b1");
+				resize();
+				alert('test');
+				window.setTimeout('move()', time);
+			}
+
+			/*
+			 * mask を指定された場所に移動する
+			 * 
+			 */
+			var move_mask = function(mask_num, count, step) {
+				var cur  = mask_ele[mask_num].current_pos;
+				var next = mask_ele[mask_num].new_pos;
+				var r = make_ofs(x_pos[cur], y_pos[cur], x_pos[next], y_pos[next], count, step);
+				mask_ele[mask_num].setAttribute('cy', r[1] +'px');
+				mask_ele[mask_num].setAttribute('cx', r[0] +'px');
+			};
+
+			/*
+			 * 移動のテスト開始
+			 */
+			var start_move_test = function(){
+				move_count　= 5;
+				moveing_tbl(rand(5));
+				document.getElementById('b2').style.visibility = 'hidden';
+				var ele = document.getElementById('t1');
+				ele.textContent = 'Running!';
+				ele.setAttribute('x', 62);
+			}
+
+			var moveing_tbl = function(n){
+				test_f = 1;
+				test_cnt = 0;
+				for (var i = 0; i < 5; i++) {
+					mask_ele[board_tbl[i]].new_pos = pattern[n][i];
+				}
+			}
+
+			function move_test() {
+				var i = 0;
+				test_cnt += 1;
+				for (i = 0; i < 5; i++) {
+					move_mask(i, test_cnt, moving_step);
+				}
+				if (test_cnt == moving_step) {
+					test_f = 0;
+					for (i = 0; i < 5; i++) {
+						mask_ele[i].current_pos = mask_ele[i].new_pos;
+						board_tbl[mask_ele[i].current_pos] = i;
+					}
+					move_count -= 1;
+					if (move_count > 0) {
+						moveing_tbl(rand(5));						
+					} else {
+						var ele = document.getElementById('t1');
+						ele.textContent = 'Done!!!';
+						ele.setAttribute('x', 70);
+						document.getElementById('txt1').textContent = '青い円盤の場所はどこ？';
+						document.getElementById('txt2').style.visibility = 'hidden';
+					}
+				}
+			}
+
+			/*
+			 * オブジェクトを動かすために、周期的に呼び出される
+			 */
+			var move = function () {
+				if (test_f != 0) {
+					move_test();
+				}
+//				alert(h + 'px');
+				
+				if (h >= v_height) {
+					h_d = -diff;
+				} else if (h <= 10) {
+					h_d = diff;
+				}
+				h += h_d;
+
+				if (w >= v_width) {
+					w_d = -diff;
+				} else if (w <= 10) {
+					w_d = diff;
+				}
+				w += w_d;
+				e_b1.setAttribute('cy', h +'px');
+				e_b1.setAttribute('cx', w +'px');
+				window.setTimeout('move()', time);
+			}
+			/*
+			 * ブラウザの表示領域変更にあわせて svg の表示領域を変更する
+			 */
+			var resize = function () {
+				var b_width = window.innerWidth;
+				var b_height = window.innerHeight;
+				ele.setAttribute('height',b_height + 'px');
+				ele.setAttribute('width',b_width + 'px');
+				if (is_webkit) {
+					if ((b_width * v_aspect) > b_height) {
+						base_x_ofs = -((b_width * v_aspect) - b_height) / 2;
+						base_y_ofs = 0;
+					}
+					else if ((b_width * v_aspect) < b_height) {
+						base_x_ofs = 0;
+						base_y_ofs = -(b_height - (b_width * v_aspect));
+					} else {
+						base_x_ofs = 0;
+						base_y_ofs = 0;
+					}
+					var x_ofs = 0 + base_x_ofs;
+					var y_ofs = 0 + base_y_ofs;
+					ele.style.left = x_ofs + 'px';
+					ele.style.top = y_ofs + 'px';
+					ele.style.position = 'fixed';
+				} else {
+					// Firefox / Opera 向け補正
+					if ((b_width * v_aspect) < b_height) {
+						base_y_ofs = -(b_height - (b_width * v_aspect)) / 2;
+					} else {
+						base_y_ofs = 0;
+					}
+					var y_ofs = 0 + base_y_ofs;
+					ele.style.top = y_ofs + 'px';
+					ele.style.position = 'fixed';
+				}
+			}
+			/*
+			 * s_* から e_* までを step で分割したときの count 番目の値を返す
+			 */
+			var make_ofs = function (s_x, s_y, e_x, e_y, count, step) {
+				var foo = count / step;
+				var x = s_x + (e_x - s_x) * foo;
+				var y = s_y + (e_y - s_y) * foo;
+				if (s_x > e_x) {
+					y += Math.sin(r_step * count) * 10;
+				} else if (s_x < e_x){
+					y -= Math.sin(r_step * count) * 10;
+				}
+				return [x, y];
+			}
+		</script>
+    </head>
+    <body onLoad="test()"  onresize="resize()">
+        <h1>New Web Project Page</h1>
+		<svg 
+			id="svg1" 
+			viewBox="0 0 200 300" 
+			style="position:fixed; top:0px; left:0px;margin:0;border:0;">
+               <defs>
+               	　<path id="curve" d="M18,60 C100,10 180,110 264,60" fill="none"></path>
+                 <radialGradient id="radial" cx="50%" cy="50%" fx="25%" fy="25%">
+                   <stop offset="0%" stop-color="#60bafc"></stop>
+                   <stop offset="50%" stop-color="#409adc"></stop>
+
+                   <stop offset="100%" stop-color="#005a9c"></stop>
+                 </radialGradient>
+                 <radialGradient id="radial2" cx="50%" cy="50%" fx="25%" fy="25%">
+                   <stop offset="0%" stop-color="#ba60fc"></stop>
+                   <stop offset="50%" stop-color="#9a40dc"></stop>
+                   <stop offset="100%" stop-color="#5a009c"></stop>
+                 </radialGradient>
+				 <linearGradient id="button_surface" gradientUnits="objectBoundingBox"
+					x1="1" x2="1" y1="0" y2="1">
+					<stop stop-color="#434343" offset="0"/>
+					<stop stop-color="#000000" offset="0.67"/>
+    			 </linearGradient>
+
+				 <linearGradient id="virtual_light" gradientUnits="objectBoundingBox" x1="0" x2="0" y1="0" y2="1">
+					<stop stop-color="#EEEEEE" offset="0" stop-opacity="1"/>
+					<stop stop-color="#EEEEEE" offset="0.4" stop-opacity="0"/>
+    			 </linearGradient>
+               </defs>
+			<rect opacity="0.2" style="fill:red;" x="0" y="0" width="200" height="300" />
+			<rect opacity="0.4" style="fill:skyblue;" x="2" y="2" width="196" height="296" />
+			<circle id="m0" fill="url(#radial2)" stroke="#5a009c"></circle>
+			<circle id="m1" fill="url(#radial2)" stroke="#5a009c"></circle>
+			<circle id="m2" fill="url(#radial2)" stroke="#5a009c"></circle>
+			<circle id="m3" fill="url(#radial2)" stroke="#5a009c"></circle>
+			<circle id="m4" fill="url(#radial2)" stroke="#5a009c"></circle>
+			<circle id="b1" cx="50" cy="50" r="10" fill="url(#radial)" stroke="#005a9c"></circle>
+
+			<circle id="b2" cx="60" cy="50" r="10" fill="url(#radial)" stroke="#005a9c"></circle>
+			<text id="txt1" x='20' y='210' font-family="Verdana" font-size="10" fill="#0099FF">青い円盤がどこに行くかを追ってください</text>
+			<text id="txt2" x='20' y='230' font-family="Verdana" font-size="10" fill="#0099FF">下のボタンを押すとスタートします</text>
+			<rect id="box1" opacity="0.2" style="fill:red;" x="0" y="0" width="" height="300" />
+  
+			<!-- button content -->
+			<rect x="58" y="238" rx="15" ry="15" width="86" height="44"
+				fill="url(#button_surface)" stroke="#363636"/>
+			<text id='t1' x="75" y="267" fill="white" font-family="Tahoma" font-size="20" font-weight="500">Start!!</text>
+
+			<!-- vitual lighting effect -->
+			<rect x="60" y="240" rx="15" ry="15" width="82" height="40" 
+				fill="url(#virtual_light)" stroke="#FFFFFF" stroke-opacity="0.4" onclick="start_move_test(0);" />
+		</svg>
+
+<!--
+		<svg 
+			id="b1" 
+			width="540" 
+			height="200" 
+			viewBox="0 0 300 300" 
+			style="position:fixed; top:0px; left:0px;margin:0;border:0;">
+		</svg>
+-->
+    </body>
+</html>
