@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <title>New Web Project</title>
+        <title>officeあ～る:SVG を使ったミニゲーム 1</title>
 		<script type="text/javascript">
 			/*
 			 * 0-(n-1) の乱数を返す
@@ -21,13 +21,21 @@
 			/*
 			 * 移動先のテーブル
 			 */
-			var pattern = [	[1, 0, 3, 2, 4],
-							[1, 0, 2, 4, 3],
-							[2, 1, 0, 4, 3],
-							[2, 3, 0, 1, 4],
-							[2, 4, 0, 3, 1],
-							[3, 4, 2, 0, 1]
+			var pattern = [	[1, 0, 4, 2, 3],
+							[1, 0, 3, 4, 2],
+							[1, 4, 3, 2, 0],
+							[2, 3, 0, 4, 1],
+							[2, 4, 3, 0, 1],
+							[3, 4, 0, 2, 1]
 							];
+/*
+			[1, 0, 3, 2, 4],
+			[1, 0, 2, 4, 3],
+			[2, 1, 0, 4, 3],
+			[2, 3, 0, 1, 4],
+			[2, 4, 0, 3, 1],
+			[3, 4, 2, 0, 1]
+*/
 			/*
 			 * 盤の  No の場所にある円盤の番号
 			 */
@@ -35,7 +43,7 @@
 			var move_count = 0;		// 盤を移動させる残り回数
 			var v_height = 300;		// 仮想画面の高さ
 			var v_width  = 200;		// 仮想画面の幅
-			var v_aspect  = v_height / v_width; 
+			var v_aspect  = v_height / v_width;
 			var is_webkit = false;
 			var x_pos = [ 60, 140,  40, 100, 160];
 			var y_pos = [ 50,  50, 150, 150, 150];
@@ -54,16 +62,17 @@
 			var test_f = 0;
 			var mask_ele = [];
 			var moving_step = 30;	// 円盤の移動完了まで何段回か
-			var r_step = Math.PI / moving_step; 
+			var r_step = Math.PI / moving_step;
+			var finished = 0;		// あたりを押した後は 1
 
 
-			
+
 			var m_r = 28;	// マスクの円の半径
 			var mask_disk = {
-				
+
 			};
 
-			function test(){
+			var test = function (){
 				for (i = 0; i < 5; i++) {
 					m_e = document.getElementById('m' + i);
 					m_e.setAttribute('r', m_r +'px');
@@ -72,18 +81,19 @@
 					m_e.current_pos = i;
 					m_e.new_pos = i;
 					mask_ele[i] = m_e;
-					
+
 				}
 				ele = document.getElementById("svg1");
 				e_b1 = document.getElementById("b1");
+				e_b2 = document.getElementById("b2");
+				ele_button = document.getElementById('t1');	// start などのボタン
 				resize();
-				alert('test');
 				window.setTimeout('move()', time);
 			}
 
 			/*
 			 * mask を指定された場所に移動する
-			 * 
+			 *
 			 */
 			var move_mask = function(mask_num, count, step) {
 				var cur  = mask_ele[mask_num].current_pos;
@@ -97,12 +107,15 @@
 			 * 移動のテスト開始
 			 */
 			var start_move_test = function(){
-				move_count　= 5;
-				moveing_tbl(rand(5));
-				document.getElementById('b2').style.visibility = 'hidden';
-				var ele = document.getElementById('t1');
-				ele.textContent = 'Running!';
-				ele.setAttribute('x', 62);
+
+				if (ele_button.textContent === 'Start!!') {
+					move_count = 5;
+					moveing_tbl(rand(5));
+					e_b2.style.visibility = 'hidden';
+					ele_button.textContent = 'Running!';
+					ele_button.setAttribute('x', 62);
+					document.getElementById('txt2').style.visibility = 'hidden';
+				}
 			}
 
 			var moveing_tbl = function(n){
@@ -113,7 +126,7 @@
 				}
 			}
 
-			function move_test() {
+			var move_test = function () {
 				var i = 0;
 				test_cnt += 1;
 				for (i = 0; i < 5; i++) {
@@ -127,11 +140,10 @@
 					}
 					move_count -= 1;
 					if (move_count > 0) {
-						moveing_tbl(rand(5));						
+						moveing_tbl(rand(5));
 					} else {
-						var ele = document.getElementById('t1');
-						ele.textContent = 'Done!!!';
-						ele.setAttribute('x', 70);
+						ele_button.textContent = 'Done!!!';
+						ele_button.setAttribute('x', 70);
 						document.getElementById('txt1').textContent = '青い円盤の場所はどこ？';
 						document.getElementById('txt2').style.visibility = 'hidden';
 					}
@@ -146,7 +158,8 @@
 					move_test();
 				}
 //				alert(h + 'px');
-				
+/*
+小さなマルを動かし続ける機能・デバッグ時に有効
 				if (h >= v_height) {
 					h_d = -diff;
 				} else if (h <= 10) {
@@ -162,6 +175,7 @@
 				w += w_d;
 				e_b1.setAttribute('cy', h +'px');
 				e_b1.setAttribute('cx', w +'px');
+*/
 				window.setTimeout('move()', time);
 			}
 			/*
@@ -215,13 +229,41 @@
 				}
 				return [x, y];
 			}
+			var ans = function(n) {
+				if (finished === 0) {
+					if (n === 0) {
+						e_b2.setAttribute('cy', y_pos[mask_ele[n].current_pos] +'px');
+						e_b2.setAttribute('cx', x_pos[mask_ele[n].current_pos] +'px');
+						e_b2.style.visibility = 'visible';
+						document.getElementById('txt1').textContent = 'あたり!!';
+						finished = 1;
+					} else {
+						document.getElementById('txt1').textContent = 'はずれ';
+					}
+				}
+			}
 		</script>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-471230-14']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
     </head>
-    <body onLoad="test()"  onresize="resize()">
-        <h1>New Web Project Page</h1>
-		<svg 
-			id="svg1" 
-			viewBox="0 0 200 300" 
+    <body onLoad="test()"  onresize="resize()"><div align="center"><a href="http://www.xrea.com/" target="_blank"><img src="http://imgj.xrea.com/banner_top_1.gif" width="468" height="9" border="0"></a><br><iframe height="60" width="468" frameborder="0" marginheight="0" marginwidth="0" scrolling="no" allowtransparency="true" src="http://imgj.xrea.com/ad_iframe.html"><a href="http://img.xrea.com/ad_click.fcg" target="_blank"><img src="http://img.xrea.com/ad_img.fcg" border="0"></a></iframe></div>
+        <h1>Officeあ～る習作：ミニゲーム１</h1><br />
+        Firefox,Opera は普通に動きます<br />
+        Chrome,Safari の場合は、ブラウザの表示領域を半透明な部分にあわせてください。
+		<svg
+			id="svg1"
+			viewBox="0 0 200 300"
 			style="position:fixed; top:0px; left:0px;margin:0;border:0;">
                <defs>
                	　<path id="curve" d="M18,60 C100,10 180,110 264,60" fill="none"></path>
@@ -249,36 +291,28 @@
                </defs>
 			<rect opacity="0.2" style="fill:red;" x="0" y="0" width="200" height="300" />
 			<rect opacity="0.4" style="fill:skyblue;" x="2" y="2" width="196" height="296" />
-			<circle id="m0" fill="url(#radial2)" stroke="#5a009c"></circle>
-			<circle id="m1" fill="url(#radial2)" stroke="#5a009c"></circle>
-			<circle id="m2" fill="url(#radial2)" stroke="#5a009c"></circle>
-			<circle id="m3" fill="url(#radial2)" stroke="#5a009c"></circle>
-			<circle id="m4" fill="url(#radial2)" stroke="#5a009c"></circle>
+			<circle id="m0" fill="url(#radial2)" stroke="#5a009c" onclick="ans(0);"></circle>
+			<circle id="m1" fill="url(#radial2)" stroke="#5a009c" onclick="ans(1);"></circle>
+			<circle id="m2" fill="url(#radial2)" stroke="#5a009c" onclick="ans(2);"></circle>
+			<circle id="m3" fill="url(#radial2)" stroke="#5a009c" onclick="ans(3);"></circle>
+			<circle id="m4" fill="url(#radial2)" stroke="#5a009c" onclick="ans(4);"></circle>
+<!--
+	デバッグ用の円盤
 			<circle id="b1" cx="50" cy="50" r="10" fill="url(#radial)" stroke="#005a9c"></circle>
-
+-->
 			<circle id="b2" cx="60" cy="50" r="10" fill="url(#radial)" stroke="#005a9c"></circle>
 			<text id="txt1" x='20' y='210' font-family="Verdana" font-size="10" fill="#0099FF">青い円盤がどこに行くかを追ってください</text>
 			<text id="txt2" x='20' y='230' font-family="Verdana" font-size="10" fill="#0099FF">下のボタンを押すとスタートします</text>
 			<rect id="box1" opacity="0.2" style="fill:red;" x="0" y="0" width="" height="300" />
-  
+
 			<!-- button content -->
 			<rect x="58" y="238" rx="15" ry="15" width="86" height="44"
 				fill="url(#button_surface)" stroke="#363636"/>
 			<text id='t1' x="75" y="267" fill="white" font-family="Tahoma" font-size="20" font-weight="500">Start!!</text>
 
 			<!-- vitual lighting effect -->
-			<rect x="60" y="240" rx="15" ry="15" width="82" height="40" 
+			<rect x="60" y="240" rx="15" ry="15" width="82" height="40"
 				fill="url(#virtual_light)" stroke="#FFFFFF" stroke-opacity="0.4" onclick="start_move_test(0);" />
 		</svg>
-
-<!--
-		<svg 
-			id="b1" 
-			width="540" 
-			height="200" 
-			viewBox="0 0 300 300" 
-			style="position:fixed; top:0px; left:0px;margin:0;border:0;">
-		</svg>
--->
     </body>
 </html>
